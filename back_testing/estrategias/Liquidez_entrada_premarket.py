@@ -10,6 +10,7 @@ import numpy as np
 threshold = 0.002
 trail = 0.01
 time_buy = 3
+price_buy = 0
 price_trail = 0
 
 def Liquidez_entrada_premarket(stock):
@@ -28,7 +29,8 @@ def Liquidez_entrada_premarket(stock):
     stock["buy"] = stock.apply(lambda row: when_buy(row, stock), axis=1)
     stock["buy"] = stock["buy"].shift(time_buy)
     stock.loc[np.isnan(stock["buy"]), "buy"] = 0
-        
+    
+    
     return stock
 
 
@@ -38,6 +40,8 @@ def when_buy(row, stock):
         if future_index < len(stock):
             return stock.loc[future_index, "close"]
     return 0
-        
+
+
+    
         
         

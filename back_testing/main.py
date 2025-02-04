@@ -17,10 +17,10 @@ from estrategias.Liquidez_entrada_premarket import Liquidez_entrada_premarket
 stock = Get_stock_data("SPY", "5m", "2024-01-27","2025-01-29")
 
 print(stock.head())
-# Save_data(stock, "SPY")
+
 
 data = Liquidez_entrada_premarket(stock)
-
+Save_data(data, "SPY")
 
 
 
