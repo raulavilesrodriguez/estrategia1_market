@@ -7,11 +7,9 @@ Created on Thu Jan 30 19:31:28 2025
 import pandas as pd
 import numpy as np
 
-threshold = 0.002
-trail = 0.01
+threshold = 0.005
 time_buy = 3
-price_buy = 0
-price_trail = 0
+
 
 def Liquidez_entrada_premarket(stock):
     stock = pd.DataFrame(stock)
@@ -29,7 +27,6 @@ def Liquidez_entrada_premarket(stock):
     stock["buy"] = stock.apply(lambda row: when_buy(row, stock), axis=1)
     stock["buy"] = stock["buy"].shift(time_buy)
     stock.loc[np.isnan(stock["buy"]), "buy"] = 0
-    
     
     return stock
 

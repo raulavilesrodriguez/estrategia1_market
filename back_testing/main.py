@@ -14,7 +14,7 @@ from helpers.Get_stock_data import Get_stock_data
 from helpers.Save_data import Save_data
 from estrategias.Liquidez_entrada_premarket import Liquidez_entrada_premarket
 
-stock = Get_stock_data("SPY", "5m", "2024-01-27","2025-01-29")
+stock = Get_stock_data("SPY", "5m", "2024-01-01","2024-01-31")
 
 print(stock.head())
 
