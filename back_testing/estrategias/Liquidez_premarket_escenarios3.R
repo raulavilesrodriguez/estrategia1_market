@@ -14,19 +14,39 @@ library(devtools)
 
 source(here::here('helpers/Get_stock_data_R_yahoo.R'))
 source(here::here('helpers/Save_data.R'))
+source(here::here("helpers/Process_data_interactivebrokers.R"))
 source(here::here('algorithm/Calculo_profit.R'))
 
 #-----Data-----
+# interactive brokers data
+download_interactiveBrokers <- TRUE
+path_data <- "./datos/datos_NVDA_1year.xlsx"
+
+# yahoo finance data
+download_yahoo <- FALSE
 symbol_stock <- "GOOGL"
-stock <- Get_stock_data_R_yahoo(symbol_stock, "5m")
-stock <- stock |> filter(date_ymd != "2025-02-13")
+ultimo.dia <- "" #"2025-02-13"
+
+
+stock <- if(download_interactiveBrokers){
+  Process_data_interactivebrokers(path_data)
+} else {
+  Get_stock_data_R_yahoo(symbol_stock, "5m")
+}
+                
+stock <- if(download_yahoo & ultimo.dia == ""){
+  stock |> filter(date_ymd != ultimo.dia)
+} else {
+  stock
+}
+
 # Save Data
 #Save_data(stock, symbol_stock)
 
-threshold <- 0.015
+threshold <- 0.012
 
 # thresholds <- seq(0.003, 0.03, 0.001)
-trails_loss <- 0.008 #seq(0.008, 0.011, 0.001)
+trails_loss <- 0.009 #seq(0.008, 0.011, 0.001)
 trails_gain <- 0.02 #seq(0.008, 0.01, 0.003)
 times_buy <- seq(1:30)
 times_left <- seq(6,48,6)
@@ -184,4 +204,28 @@ resumen |> ggplot(aes(x = time_buy, y = time_left, size = scale(Profit_Suma), co
        y = "time_left") +
   theme_minimal()
 
+# Plots de todos los escenarios
+escenarios |> ggplot(aes(x = factor(time_buy), y = profit, color = profit < 0)) +
+  geom_point(alpha = 0.7, size = 2) +
+  scale_color_manual(values = c("blue", "red"), labels = c("Profit ≥ 0", "Profit < 0")) +
+  labs(title = "Gráfico de dispersión de Profit vs time_buy",
+       x = "time_buy",
+       y = "Profit_Suma") +
+  theme_minimal()
+
+
+escenarios |> ggplot(aes(x = time_buy, y = time_left, size = scale(profit), color = scale(profit))) +
+  geom_point(alpha = 0.6) +
+  scale_size(range = c(1, 15)) +  # Ajusta el tamaño de las burbujas
+  scale_color_gradient(low = "#F5004F", high = "#06D001") + 
+  labs(title = "Gráfico de burbujas: Profit por Escenario",
+       x = "time_buy",
+       y = "time_left") +
+  theme_minimal()
+
+prueba <- escenarios |> filter(time_buy == 2, time_left == 42)
+sum(ifelse(prueba$profit <0, prueba$profit, 0))
+sum(ifelse(prueba$profit >0, prueba$profit, 0))
+
+sum(ifelse(prueba$profit >0, prueba$profit, 0)) + sum(ifelse(prueba$profit <0, prueba$profit, 0))
 
