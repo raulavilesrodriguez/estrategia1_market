@@ -1,6 +1,6 @@
 library(yahoofinancer)
 
-Get_stock_data_R_yahoo <- function(symbol, interval, start, end){
+Get_stock_data_R_yahoo <- function(symbol, interval, start="2024-01-01", end="2025-02-22"){
   stock <- Ticker$new(symbol)
   if(interval == "5m" | interval == "1m"){
     stock.data <- stock$get_history(interval = interval)

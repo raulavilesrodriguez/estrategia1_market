@@ -58,9 +58,17 @@ cost_broker <- 2  # $1 to buy and $1 to sell
 currentPosition <- 0
 
 Estrategia4 <- function(threshold, stock){
-  stock <- stock |> mutate(ema9 = EMA(close, n = 9), ema21 = EMA(close, n = 21))
-  stock$profit <- sapply(1:nrow(stock), function(i) when_buy(i, stock))
+  stock <- stock |> mutate(emaFast = EMA(close, n = 9), emaSlow = EMA(close, n = 21))
   
+  stock$results <- map(1:nrow(stock), ~ when_buy(.x, stock))
+  stock <- stock |> 
+    mutate(
+      profit = map_dbl(results, ~ pluck(.x, "profit", .default = 0)),
+      index_sell = map_dbl(results, ~ pluck(.x, "i", .default = NA)) 
+      )
+  stock <- stock |>
+    mutate(date_sell = case_when(!is.na(index_sell) ~ as_datetime(stock$date[index_sell])))
+    
   stock
 }
 
@@ -74,11 +82,11 @@ when_buy <- function(index, stock) {
   }
   
   if (index != nrow(stock) &&
-      !is.na(stock[["ema9"]][index]) &&
-      !is.na(stock[["ema21"]][index]) &&
+      !is.na(stock[["emaFast"]][index]) &&
+      !is.na(stock[["emaSlow"]][index]) &&
       as.Date(stock[["date"]][i]) == as.Date(stock[["date"]][index]) && 
       as.Date(stock[["date"]][index]) == as.Date(stock[["date"]][j]) &&
-      stock[["ema9"]][index] > (stock[["ema21"]][index] + 0.005)
+      stock[["emaFast"]][index] > (stock[["emaSlow"]][index] + 0.005)
       ) {
     if(index > currentPosition){
       x <- Calculo_profit4(
@@ -91,7 +99,7 @@ when_buy <- function(index, stock) {
         cost_broker
       )
       currentPosition <<- x[["i"]]
-      print(paste("hola: ", currentPosition))
+      print(paste("I want to be millionaire: ", currentPosition))
       return(x)
     } else {
       return(0) 
@@ -101,7 +109,16 @@ when_buy <- function(index, stock) {
 }
 
 escenarios4 <- Estrategia4(threshold, stock)
+resumen <- tibble(
+  ingresos = sum(pmax(escenarios4$profit, 0)),
+  perdidas = sum(pmin(escenarios4$profit, 0)),
+  trades_wins = sum(escenarios4$profit>0),
+  trades_loss = sum(escenarios4$profit<0),
+  )
+resumen <- resumen |> mutate(neto = ingresos + perdidas)
 
+escenarios <- escenarios4 |> mutate(date = as.character(date))
+write_xlsx(escenarios, "./datos/escenario4.xlsx")
 
 
 

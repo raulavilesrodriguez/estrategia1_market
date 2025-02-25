@@ -22,7 +22,7 @@ Calculo_profit4 <- function(
   }
   
   while(i < nrow(stock)){
-    if(i >= nrow(stock) || stock[[i, "date_ymd"]] != stock[[indice, "date_ymd"]]){
+    if(i >= nrow(stock) ){
       break
     }
     
@@ -50,5 +50,5 @@ Calculo_profit4 <- function(
     price <- x
     i <- i + 1
   }
-  return(list(profit = profit, i = i))
+  return(list(profit = profit, i = i-1))
 }
