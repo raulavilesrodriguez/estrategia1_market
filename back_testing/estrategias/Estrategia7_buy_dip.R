@@ -16,7 +16,7 @@ library(lubridate)
 source(here::here('helpers/Get_stock_data_R_yahoo.R'))
 source(here::here('helpers/Save_data.R'))
 source(here::here("helpers/Process_data_interactivebrokers.R"))
-source(here::here('algorithm/Calculo_profit6.R'))
+source(here::here('algorithm/Calculo_profit7.R'))
 
 #-----Data-----
 # interactive brokers data
@@ -54,40 +54,35 @@ ventana_5min <- 78
 capital <- 2000
 cost_broker <- 2  # $1 to buy and $1 to sell
 
-#---- Estrategia 6 -----
+
+#---- Estrategia 7 -----
 currentPosition <- 0
 
-Estrategia6 <- function(threshold, stock){
+Estrategia7 <- function(threshold, stock){
+  indices <- which(grepl("15:55", stock[["date"]]))
+  close <- c()
   
-  indices1 <- which(grepl("09:30", stock[["date"]]))
-  indices2 <- which(grepl("15:55", stock[["date"]]))
+  for(i in indices){
+    close <- append(close, stock[[i, "close"]])
+  }
+  db <- data.frame(indices = indices, close = close)
+  db <- db |> mutate(change = (close/lag(close))-1)
   
-  lista <- list()
-  for (x in indices1) {
-    for (y in indices2) {
-      if (format(stock$date[x], "%Y-%m-%d") == format(stock$date[y], "%Y-%m-%d")){
-        print(paste("I will be millionaire: ", x, y))
-        lista <- append(lista, list(c(x, y))) 
-      }
+  signals <- c(FALSE, FALSE)
+  for (i in 3:nrow(db)) {
+    if(db[[i, "change"]]<0 && db[[i, "change"]]< (-0.01) &&
+       db[[i-1, "change"]]<0 && db[[i-1, "change"]]< (-0.01)
+       ){
+      signals <- append(signals, TRUE)
+    } else {
+      signals <- append(signals, FALSE)
     }
   }
-  indices <- as.data.frame(do.call(rbind, lista))
-  colnames(indices) <- c("indices1", "indices2")
+  db <- db |> mutate(signals = signals)
   
-  stock$dips <- (seq_len(nrow(stock)) %in% indices$indices1 & 
-            stock$change < threshold)
-  
-  indices_signal <- c()
-  
-  for(i in 1:nrow(stock)){
-    if(stock[[i, "dips"]]){
-      print(paste("I am Byron Raul: ", i))
-      index <- which(indices$indices1==i)
-      indices_signal <- append(indices_signal, indices[[index, "indices2"]]) 
-    }
-  }
-  
-  stock$signals <- seq_len(nrow(stock)) %in% indices_signal
+  # filter signals
+  w <- db |> filter(signals == TRUE)
+  stock$signals <- seq_len(nrow(stock)) %in% w$indices
   
   stock$results <- map(1:nrow(stock), ~ when_buy(.x, stock))
   
@@ -99,25 +94,25 @@ Estrategia6 <- function(threshold, stock){
   stock <- stock |>
     mutate(date_sell = case_when(!is.na(index_sell) ~ as_datetime(stock$date[index_sell])))
   
-  stock
+  return(list(db=db, stock=stock))
 }
+
 
 when_buy <- function(index, stock){
   
   if(index != nrow(stock) && stock[["signals"]][index]){
     
     if(index > currentPosition){
-      x <- Calculo_profit6(
+      x <- Calculo_profit7(
         index, 
         trails_loss, 
         trails_gain, 
         stock, 
-        ventana_5min, 
         capital, 
         cost_broker
       )
       currentPosition <<- x[["i"]]
-      print(paste("I want to be millionaire: ", currentPosition))
+      print(paste("I am millionaire: ", currentPosition))
       return(x)
     } else {
       return(0) 
@@ -126,17 +121,16 @@ when_buy <- function(index, stock){
   return(0)
 }
 
-
-escenarios6 <- Estrategia6(threshold, stock)
+results <- Estrategia7(threshold, stock)
+db <- results$db
+escenarios7 <- results$stock
 
 resumen <- tibble(
-  ingresos = sum(pmax(escenarios6$profit, 0)),
-  perdidas = sum(pmin(escenarios6$profit, 0)),
-  trades_wins = sum(escenarios6$profit>0),
-  trades_loss = sum(escenarios6$profit<0),
+  ingresos = sum(pmax(escenarios7$profit, 0)),
+  perdidas = sum(pmin(escenarios7$profit, 0)),
+  trades_wins = sum(escenarios7$profit>0),
+  trades_loss = sum(escenarios7$profit<0),
 )
 resumen <- resumen |> mutate(neto = ingresos + perdidas)  
-resumen <- resumen |> mutate(margen = neto / capital)  
-
-
+resumen <- resumen |> mutate(margen = neto / capital)
 

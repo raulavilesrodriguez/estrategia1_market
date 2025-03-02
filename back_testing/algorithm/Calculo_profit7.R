@@ -1,11 +1,10 @@
 #---TRADE---
 
-Calculo_profit4 <- function(
+Calculo_profit7 <- function(
     indice, 
     trail_loss, 
     trail_gain, 
     stock,
-    ventana_5min,
     capital,
     cost_broker
 ){
@@ -22,12 +21,12 @@ Calculo_profit4 <- function(
   }
   
   while(i < nrow(stock)){
-    if(i >= nrow(stock) ){    #|| stock[[i, "date_ymd"]] != stock[[indice, "date_ymd"]]
+    if(i >= nrow(stock) ){
       break
     }
     
     x <- stock[[i, "close"]]
-    profit <- (num_stokcs*(x - stock[[indice, "close"]])) - cost_broker
+    profit <- (num_stokcs*(x - price)) - cost_broker
     
     # Exit when gain
     if(x >= stop_gain){
@@ -52,3 +51,4 @@ Calculo_profit4 <- function(
   }
   return(list(profit = profit, i = i-1))
 }
+
