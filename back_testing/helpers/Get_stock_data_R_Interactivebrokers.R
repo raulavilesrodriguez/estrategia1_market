@@ -8,7 +8,15 @@ tws <- twsConnect(port = 7497)
 isConnected(tws)
 
 # Definir el contract
-contract <- twsSTK("NVDA")
+symbol <- "GOOGL"
+accion <- TRUE #could be stock or index
+contract <- if(accion){
+  twsSTK(symbol)
+} else {
+  twsIndex(symbol, exch = "CBOE", currency = "USD") 
+}
+#contract <- twsSTK("GOOGL")
+#contract <- twsIndex(symbol, exch = "CBOE", currency = "USD")
 
 end_date <- Sys.time()
 end_date <- format(end_date, "%Y%m%d %H:%M:%S")
@@ -26,6 +34,6 @@ write_xlsx(
     date = index(contract_data),
     coredata(contract_data)
     ), 
-  "./datos/datos_NVDA_1year.xlsx"
+  "./datos/datos_GOOGLE_06mar25.xlsx"
   )
 

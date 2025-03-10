@@ -20,7 +20,7 @@ source(here::here('algorithm/Calculo_profit.R'))
 #-----Data-----
 # interactive brokers data
 download_interactiveBrokers <- TRUE
-path_data <- "./datos/datos_NVDA_1year.xlsx"
+path_data <- "./datos/datos_META_1year_05mar25.xlsx"
 
 # yahoo finance data
 download_yahoo <- FALSE

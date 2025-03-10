@@ -5,7 +5,6 @@ Calculo_profit6 <- function(
     trail_loss, 
     trail_gain, 
     stock,
-    ventana_5min,
     capital,
     cost_broker
 ){

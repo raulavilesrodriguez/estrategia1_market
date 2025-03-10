@@ -21,7 +21,7 @@ source(here::here('algorithm/Calculo_profit6.R'))
 #-----Data-----
 # interactive brokers data
 download_interactiveBrokers <- TRUE
-path_data <- "./datos/datos_NVDA_1year.xlsx"
+path_data <- "./datos/datos_IAU_1year_05mar25.xlsx"
 
 # yahoo finance data
 download_yahoo <- FALSE
@@ -50,7 +50,6 @@ trails_loss <- 0.009 #seq(0.008, 0.011, 0.001)
 trails_gain <- 0.02 #seq(0.008, 0.01, 0.003)
 times_buy <- 0
 times_left <- 48
-ventana_5min <- 78
 capital <- 2000
 cost_broker <- 2  # $1 to buy and $1 to sell
 
@@ -112,7 +111,6 @@ when_buy <- function(index, stock){
         trails_loss, 
         trails_gain, 
         stock, 
-        ventana_5min, 
         capital, 
         cost_broker
       )

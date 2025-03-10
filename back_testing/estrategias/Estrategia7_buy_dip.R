@@ -21,20 +21,22 @@ source(here::here('algorithm/Calculo_profit7.R'))
 #-----Data-----
 # interactive brokers data
 download_interactiveBrokers <- TRUE
-path_data <- "./datos/datos_NVDA_1year.xlsx"
+path_data <- "./datos/datos_META_1year_05mar25.xlsx"
+path_vix <- "./datos/datos_VIX_1year_06mar25.xlsx"
 
 # yahoo finance data
-download_yahoo <- FALSE
 symbol_stock <- "GOOGL"
 ultimo.dia <- "" #"2025-02-13"
+start <- "2025-01-06"
+end <- "2025-03-06"
 
 stock <- if(download_interactiveBrokers){
   Process_data_interactivebrokers(path_data)
 } else {
-  Get_stock_data_R_yahoo(symbol_stock, "5m")
+  Get_stock_data_R_yahoo(symbol_stock, "5m", start = start, end = end)
 }
 
-stock <- if(download_yahoo & ultimo.dia == ""){
+stock <- if(!download_interactiveBrokers & ultimo.dia != ""){
   stock |> filter(date_ymd != ultimo.dia)
 } else {
   stock
@@ -43,22 +45,22 @@ stock <- if(download_yahoo & ultimo.dia == ""){
 # Save Data
 #Save_data(stock, symbol_stock)
 
-threshold <- -0.011
+#----INPUTS--------
+change_dip1 <- (-0.00) #-0.011 to stocks
+change_dip2 <- (-0.00) #-0.005 to stocks
+threshold_rsi <- 63
 
 # thresholds <- seq(0.003, 0.03, 0.001)
 trails_loss <- 0.009 #seq(0.008, 0.011, 0.001)
-trails_gain <- 0.02 #seq(0.008, 0.01, 0.003)
-times_buy <- 0
-times_left <- 48
-ventana_5min <- 78
-capital <- 2000
+trails_gain <- 0.01 #seq(0.008, 0.01, 0.003)
+capital <- 4000
 cost_broker <- 2  # $1 to buy and $1 to sell
 
 
 #---- Estrategia 7 -----
 currentPosition <- 0
 
-Estrategia7 <- function(threshold, stock){
+Estrategia7 <- function(stock){
   indices <- which(grepl("15:55", stock[["date"]]))
   close <- c()
   
@@ -70,8 +72,8 @@ Estrategia7 <- function(threshold, stock){
   
   signals <- c(FALSE, FALSE)
   for (i in 3:nrow(db)) {
-    if(db[[i, "change"]]<0 && db[[i, "change"]]< (-0.01) &&
-       db[[i-1, "change"]]<0 && db[[i-1, "change"]]< (-0.01)
+    if(db[[i-1, "change"]]< change_dip1 &&
+      db[[i, "change"]]< change_dip2 
        ){
       signals <- append(signals, TRUE)
     } else {
@@ -83,6 +85,40 @@ Estrategia7 <- function(threshold, stock){
   # filter signals
   w <- db |> filter(signals == TRUE)
   stock$signals <- seq_len(nrow(stock)) %in% w$indices
+  
+  # Indicators
+  stock <- stock |> mutate(rsi = RSI(close, SMA, n = 20))
+  stock <- stock |> mutate(obv = OBV(close, volume))
+  stock <- stock |> mutate(ema = EMA(obv, n=3))
+  stock$ema[is.na(stock$ema)] <- 0
+  so <- stoch(stock[,3:5], nFastK  = 10, nFastD  = 3, nSlowD  = 3)
+  so <- tibble(so)
+  stock <- stock |> 
+    mutate(soFastk = so$so[,1], soFastD=so$so[,2], soSlowD=so$so[,3])
+  stock$soFastk[is.na(stock$soFastk)] <- 0
+  stock$soFastD[is.na(stock$soFastD)] <- 0
+  stock$soSlowD[is.na(stock$soSlowD)] <- 0
+  macd <- MACD(stock$close, nFast = 12, nSlow = 26, nSig = 9)
+  macd.Indicator <- macd[,"macd"]
+  macd.Signal <- macd[,"signal"]
+  stock <- stock |>
+    mutate(macd = macd.Indicator, macdSignal = macd.Signal)
+  stock$macd[is.na(stock$macd)] <- 0
+  stock$macdSignal[is.na(stock$macdSignal)] <- 0
+  
+  vix <- Process_data_interactivebrokers(path_vix)
+  stock$volatile <- map(1:nrow(stock), ~ volatil(.x, stock, vix))
+  db$volatile <- unlist(map(1:nrow(db), ~ stock[["volatile"]][db[["indices"]][.x]]))
+  db$rsi <- unlist(map(1:nrow(db), ~ stock[["rsi"]][db[["indices"]][.x]]))
+  db$volume <- unlist(map(1:nrow(db), ~ stock[["volume"]][db[["indices"]][.x]])) 
+  db$obv <- unlist(map(1:nrow(db), ~ stock[["obv"]][db[["indices"]][.x]]))
+  db$ema <- unlist(map(1:nrow(db), ~ stock[["ema"]][db[["indices"]][.x]]))
+  db$soFastk <- unlist(map(1:nrow(db), ~ stock[["soFastk"]][db[["indices"]][.x]]))
+  db$soFastD <- unlist(map(1:nrow(db), ~ stock[["soFastD"]][db[["indices"]][.x]]))
+  db$soSlowD <- unlist(map(1:nrow(db), ~ stock[["soSlowD"]][db[["indices"]][.x]]))
+  db$macd <- unlist(map(1:nrow(db), ~ stock[["macd"]][db[["indices"]][.x]]))
+  db$macdSignal <- unlist(map(1:nrow(db), ~ stock[["macdSignal"]][db[["indices"]][.x]]))
+  
   
   stock$results <- map(1:nrow(stock), ~ when_buy(.x, stock))
   
@@ -97,10 +133,22 @@ Estrategia7 <- function(threshold, stock){
   return(list(db=db, stock=stock))
 }
 
+volatil <- function(index, stock, vix){
+  indice_vix <- which(vix[["date"]] %in% stock[["date"]][index])
+  if(!is_empty(indice_vix)){
+    return(vix[["close"]][indice_vix])
+  } else {
+    return(vix[["close"]][1])
+  }
+}
 
 when_buy <- function(index, stock){
   
-  if(index != nrow(stock) && stock[["signals"]][index]){
+  if(index != nrow(stock) && 
+     stock[["signals"]][index] &&
+     !is.na(stock[["rsi"]][index]) &&
+     stock[["rsi"]][index] <= threshold_rsi
+     ){
     
     if(index > currentPosition){
       x <- Calculo_profit7(
@@ -121,7 +169,7 @@ when_buy <- function(index, stock){
   return(0)
 }
 
-results <- Estrategia7(threshold, stock)
+results <- Estrategia7(stock)
 db <- results$db
 escenarios7 <- results$stock
 
@@ -134,3 +182,21 @@ resumen <- tibble(
 resumen <- resumen |> mutate(neto = ingresos + perdidas)  
 resumen <- resumen |> mutate(margen = neto / capital)
 
+
+#----Ploting-----
+plt <- escenarios7 |> filter(profit !=0)
+
+# plot density
+plt |>
+  ggplot(aes(x=profit)) + geom_density(fill = "#059212", alpha=0.5) +
+  labs(title = "Densidad de Profit por time_buy",
+       x = "Profit",
+       y = "Densidad",
+       fill = "time_buy") +
+  theme_minimal()
+
+write_xlsx(db, "./datos/plt.xlsx")
+
+# vix
+#s <- Ticker$new("^VIX")
+#s.data<- s$get_history(interval = "5m", start = start, end = end)
