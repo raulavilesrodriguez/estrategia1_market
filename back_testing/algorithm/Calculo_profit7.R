@@ -17,7 +17,7 @@ Calculo_profit7 <- function(
   num_stokcs <- ifelse(capital > 1, floor(capital/price), 1)
   
   if(i >= nrow(stock)){
-    return(list(profit = 0, i = nrow(stock)))
+    return(list(profit = 0, i = nrow(stock), num_stokcs=num_stokcs))
   }
   
   while(i < nrow(stock)){
@@ -26,11 +26,11 @@ Calculo_profit7 <- function(
     }
     
     x <- stock[[i, "close"]]
-    profit <- (num_stokcs*(x - price)) - cost_broker
+    profit <- (num_stokcs*(x - stock[[indice, "close"]])) - cost_broker
     
     # Exit when gain
     if(x >= stop_gain){
-      return(list(profit = profit, i = i))
+      return(list(profit = profit, i = i, num_stokcs=num_stokcs))
     }
     
     # configuration automatic stop loss
@@ -43,12 +43,12 @@ Calculo_profit7 <- function(
     
     # Exit when lost
     if(x <= stop_loss){
-      return(list(profit = profit, i = i))
+      return(list(profit = profit, i = i, num_stokcs=num_stokcs))
     }
     
     price <- x
     i <- i + 1
   }
-  return(list(profit = profit, i = i-1))
+  return(list(profit = profit, i = i-1, num_stokcs=num_stokcs))
 }
 

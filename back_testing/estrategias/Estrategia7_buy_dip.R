@@ -25,9 +25,9 @@ path_data <- "./datos/datos_META_1year_05mar25.xlsx"
 path_vix <- "./datos/datos_VIX_1year_06mar25.xlsx"
 
 # yahoo finance data
-symbol_stock <- "GOOGL"
+symbol_stock <- "META"
 ultimo.dia <- "" #"2025-02-13"
-start <- "2025-01-06"
+start <- "2025-02-06"
 end <- "2025-03-06"
 
 stock <- if(download_interactiveBrokers){
@@ -46,7 +46,7 @@ stock <- if(!download_interactiveBrokers & ultimo.dia != ""){
 #Save_data(stock, symbol_stock)
 
 #----INPUTS--------
-change_dip1 <- (-0.00) #-0.011 to stocks
+change_dip1 <- (-0.0) #-0.011 to stocks
 change_dip2 <- (-0.00) #-0.005 to stocks
 threshold_rsi <- 63
 

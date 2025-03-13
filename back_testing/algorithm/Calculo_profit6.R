@@ -26,7 +26,7 @@ Calculo_profit6 <- function(
     }
     
     x <- stock[[i, "close"]]
-    profit <- (num_stokcs*(x - price)) - cost_broker
+    profit <- (num_stokcs*(x - stock[[indice, "close"]])) - cost_broker
     
     # Exit when gain
     if(x >= stop_gain){

@@ -8,7 +8,7 @@ tws <- twsConnect(port = 7497)
 isConnected(tws)
 
 # Definir el contract
-symbol <- "GOOGL"
+symbol <- "XLV"
 accion <- TRUE #could be stock or index
 contract <- if(accion){
   twsSTK(symbol)
@@ -24,7 +24,7 @@ end_date <- format(end_date, "%Y%m%d %H:%M:%S")
 contract_data <- reqHistoricalData(
   tws, 
   contract,
-  endDateTime = end_date,
+  endDateTime = "20250305 19:00:00",
   barSize = "5 min", 
   duration = "1 Y"
   )
@@ -34,6 +34,6 @@ write_xlsx(
     date = index(contract_data),
     coredata(contract_data)
     ), 
-  "./datos/datos_GOOGLE_06mar25.xlsx"
+  "./datos/datos_XLV_05mar25.xlsx"
   )
 
