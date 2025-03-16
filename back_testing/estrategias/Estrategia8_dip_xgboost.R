@@ -57,7 +57,7 @@ threshold_rsi <- 63
 
 # thresholds <- seq(0.003, 0.03, 0.001)
 trails_loss <- 0.009 #seq(0.008, 0.011, 0.001)
-trails_gain <- 0.02 #seq(0.008, 0.01, 0.003)
+trails_gain <- 0.01 #seq(0.008, 0.01, 0.003)
 capital <- 4000
 cost_broker <- 2  # $1 to buy and $1 to sell
 
@@ -90,22 +90,17 @@ when_buy <- function(index, stock){
   if(index != nrow(stock) && 
      stock[["signals"]][index]
   ){
-    
-    if(index > currentPosition){
-      x <- Calculo_profit7(
-        index, 
-        trails_loss, 
-        trails_gain, 
-        stock, 
-        capital, 
-        cost_broker
-      )
-      currentPosition <<- x[["i"]]
-      print(paste("I am millionaire: ", currentPosition))
-      return(x)
-    } else {
-      return(0) 
-    }
+    x <- Calculo_profit7(
+      index, 
+      trails_loss, 
+      trails_gain, 
+      stock, 
+      capital, 
+      cost_broker
+    )
+    currentPosition <<- x[["i"]]
+    print(paste("I am millionaire: ", currentPosition))
+    return(x)
   }
   return(0)
 }

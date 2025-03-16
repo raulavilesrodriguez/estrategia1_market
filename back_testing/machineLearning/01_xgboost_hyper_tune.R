@@ -11,7 +11,7 @@ source(here::here('helpers/Get_stock_data_R_yahoo.R'))
 
 slice <- dplyr::slice
 
-path_xgboost <- "./datos/Xgboost/buyDips_META_10mar25.xlsx"
+path_xgboost <- "./datos/Xgboost/buyDips_META_10mar25v2.xlsx"
 path_calendar_usa <- "./datos/calendars/calendar_usa.xlsx"
 path_calendar_stock <- "./datos/calendars/meta_11mar2025.xlsx"
 path_data <- "./datos/datos_META_1year_05mar25.xlsx"

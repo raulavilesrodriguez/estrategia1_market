@@ -8,7 +8,7 @@ tws <- twsConnect(port = 7497)
 isConnected(tws)
 
 # Definir el contract
-symbol <- "XLV"
+symbol <- "BRK B"
 accion <- TRUE #could be stock or index
 contract <- if(accion){
   twsSTK(symbol)
@@ -34,6 +34,6 @@ write_xlsx(
     date = index(contract_data),
     coredata(contract_data)
     ), 
-  "./datos/datos_XLV_05mar25.xlsx"
+  "./datos/datos_BRK B_1year_05mar25.xlsx"
   )
 
