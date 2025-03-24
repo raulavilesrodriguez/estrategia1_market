@@ -25,10 +25,10 @@ path_data <- "./datos/datos_SPLG_1year_05mar25.xlsx"
 path_vix <- "./datos/datos_VIX_1year_06mar25.xlsx"
 
 # yahoo finance data
-symbol_stock <- "SPLG"
+symbol_stock <- "BRK-B"
 ultimo.dia <- "" #"2025-02-13"
-start <- "2025-02-06"
-end <- "2025-03-06"
+start <- "2025-03-06"
+end <- "2025-03-24"
 
 stock <- if(download_interactiveBrokers){
   Process_data_interactivebrokers(path_data)
@@ -195,8 +195,10 @@ plt |>
        fill = "time_buy") +
   theme_minimal()
 
-write_xlsx(db, "./datos/plt.xlsx")
+db$name_stock <- rep(symbol_stock, nrow(db))
+db <- db |> select(name_stock, everything())
+write_xlsx(db, "./datos/db.xlsx")
 
-# vix
+# vix  "BRK-B"
 #s <- Ticker$new("^VIX")
 #s.data<- s$get_history(interval = "5m", start = start, end = end)

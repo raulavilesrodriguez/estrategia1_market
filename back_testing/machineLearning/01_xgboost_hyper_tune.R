@@ -8,6 +8,7 @@ library(here)
 
 source(here::here("helpers/Process_data_interactivebrokers.R"))
 source(here::here('helpers/Get_stock_data_R_yahoo.R'))
+source(here::here("helpers/analisis_calendars.R"))
 
 slice <- dplyr::slice
 
@@ -15,9 +16,13 @@ path_xgboost <- "./datos/Xgboost/buyDips_META_10mar25v2.xlsx"
 path_calendar_usa <- "./datos/calendars/calendar_usa.xlsx"
 path_calendar_stock <- "./datos/calendars/meta_11mar2025.xlsx"
 path_data <- "./datos/datos_META_1year_05mar25.xlsx"
+path_data_to_predict <- "./datos/Xgboost/buyDips_META_NUEVOS_21mar25.xlsx"
 
-symbol_stock <- "META"
+
 stock <- Process_data_interactivebrokers(path_data)
+
+data_new_to_predict <- read_excel(path_data_to_predict) |>
+  clean_names()
 
 # -----Wrangling DATA of CALENDARS ----
 calendar_usa_tbl <- read_excel(path_calendar_usa) |>
@@ -38,6 +43,17 @@ calendar_usa_tbl <- calendar_usa_tbl |>
       is.na(time), paste(date, "09:30:00"), paste(date, format(time, "%H:%M:%S"))
     )
   )
+
+calendar_usa_tbl$release <- trimws(calendar_usa_tbl$release)
+calendar_usa_tbl$release <- gsub("\\s+", " ", calendar_usa_tbl$release)
+calendar_usa_tbl$release <- iconv(calendar_usa_tbl$release, to = "ASCII//TRANSLIT")
+
+which(grepl("Employment Situation for", calendar_usa_tbl$release))
+which(grepl("Consumer Price Index for", calendar_usa_tbl$release))
+
+calendar_usa_tbl_filt <- calendar_usa_tbl[
+  grepl("Employment Situation for|Consumer Price Index for", calendar_usa_tbl$release),
+]
 
 # ---- Wrangling DATA of MODEL -----
 signals_tbl <- read_excel(path_xgboost) |>
@@ -60,8 +76,11 @@ xgb_spec_stage_1 <- boost_tree(
   learn_rate = tune()
 )
 
+columns_to_normalize <- c("volume", "obv", "ema", "volume_brk_b", "obv_brk_b", "ema_brk_b")
+
 rec_spec <- recipe(signals ~ ., signals_tbl) |>
-  step_dummy(all_nominal_predictors(), one_hot = TRUE)
+  step_dummy(all_nominal_predictors(), one_hot = TRUE) |>
+  step_normalize(all_of(columns_to_normalize)) 
 
 rec_spec |> prep() |> juice() |> glimpse()
 
@@ -179,60 +198,24 @@ resultado_xgboost <- resultado_xgboost |> clean_names()
 
 # -----------ANALYSIS with CALENDARS-------
 # add dates
-resultado_xgboost <- resultado_xgboost |>
-  mutate(date = sapply(indices, function(indice){as.character(stock[["date"]][indice])}))
-resultado_xgboost <- resultado_xgboost |> select(indices, date, everything())
-
-# -----CALENDAR EVENTS SOTCK ---
-coincidences <- sapply(calendar_stock_tbl$date, function(x){
-  i <- which(as.Date(x) == as.Date(resultado_xgboost$date))
-  if(length(i) == 1) {
-    i
-  }
-})
-coincidences <- unlist(unique(coincidences))
+resultado_xgboost <- add_dates(resultado_xgboost, stock)
 
 resultado_xgboost.2 <- resultado_xgboost
 
-lapply(coincidences, function(i){
-  resultado_xgboost.2[i, "pred_class"] <<- "FALSE"
-  j <- i + 1
-  if(j < nrow(resultado_xgboost.2)){
-    resultado_xgboost.2[j, "pred_class"] <<- "FALSE"  
-  }
-})
+# -----CALENDAR EVENTS SOTCK ---
+resultado_xgboost.2 <- analisis_events_stock(calendar_stock_tbl, resultado_xgboost.2)
 
 # -------CALENDAR USA-------
-calendar_usa_tbl$release <- trimws(calendar_usa_tbl$release)
-calendar_usa_tbl$release <- gsub("\\s+", " ", calendar_usa_tbl$release)
-calendar_usa_tbl$release <- iconv(calendar_usa_tbl$release, to = "ASCII//TRANSLIT")
-
-which(grepl("Employment Situation for", calendar_usa_tbl$release))
-which(grepl("Consumer Price Index for", calendar_usa_tbl$release))
-
-calendar_usa_tbl_filt <- calendar_usa_tbl[
-  grepl("Employment Situation for|Consumer Price Index for", calendar_usa_tbl$release),
-]
-
-coincidences_usa <- sapply(calendar_usa_tbl_filt$date, function(x){
-  i <- which(as.Date(x) == as.Date(resultado_xgboost$date))
-  if(length(i) == 1) {
-    i
-  }
-})
-coincidences_usa <- unlist(unique(coincidences_usa))
-
-lapply(coincidences_usa, function(i){
-  resultado_xgboost.2[i, "pred_class"] <<- "FALSE"
-  j <- i + 1
-  if(j < nrow(resultado_xgboost.2)){
-    resultado_xgboost.2[j, "pred_class"] <<- "FALSE"  
-  }
-})
+resultado_xgboost.2 <- analisis_events_usa(calendar_usa_tbl_filt, resultado_xgboost.2)
 
 write_xlsx(resultado_xgboost.2, "./datos/Xgboost/resultado_xgboost.xlsx")
 
 
-
+# new data
+predicciones_nuevas <- bind_cols(
+  wflw_final |> predict(data_new_to_predict),
+  wflw_final |> predict(data_new_to_predict, type = "prob"),
+  data_new_to_predict
+)
 
 
