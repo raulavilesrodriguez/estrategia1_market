@@ -21,10 +21,10 @@ source(here::here('algorithm/Calculo_profit7.R'))
 
 #-----Data-----
 # interactive brokers data
-download_interactiveBrokers <- TRUE
+download_interactiveBrokers <- FALSE
 path_data <- "./datos/datos_META_1year_05mar25.xlsx"
 path_vix <- "./datos/datos_VIX_1year_06mar25.xlsx"
-path_xgboost <- "./datos/Xgboost/resultado_xgboost.xlsx"
+path_xgboost <- "./datos/Xgboost/pred_nuevas_xgboost.xlsx"
 
 resultado_xgboost <- read_excel(path_xgboost) |>
   clean_names()
@@ -32,8 +32,8 @@ resultado_xgboost <- read_excel(path_xgboost) |>
 # yahoo finance data
 symbol_stock <- "META"
 ultimo.dia <- "" #"2025-04-13"
-start <- "2025-02-06"
-end <- "2025-03-06"
+start <- "2025-03-06"
+end <- "2025-03-25"
 
 stock <- if(download_interactiveBrokers){
   Process_data_interactivebrokers(path_data)

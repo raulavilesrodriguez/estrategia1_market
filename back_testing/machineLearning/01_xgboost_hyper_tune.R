@@ -10,6 +10,7 @@ source(here::here("helpers/Process_data_interactivebrokers.R"))
 source(here::here('helpers/Get_stock_data_R_yahoo.R'))
 source(here::here("helpers/analisis_calendars.R"))
 
+
 slice <- dplyr::slice
 
 path_xgboost <- "./datos/Xgboost/buyDips_META_10mar25v2.xlsx"
@@ -196,26 +197,34 @@ resultado_xgboost <- resultado_xgboost |> relocate(indices, .before = everything
 
 resultado_xgboost <- resultado_xgboost |> clean_names()
 
-# -----------ANALYSIS with CALENDARS-------
-# add dates
-resultado_xgboost <- add_dates(resultado_xgboost, stock)
-
-resultado_xgboost.2 <- resultado_xgboost
-
-# -----CALENDAR EVENTS SOTCK ---
-resultado_xgboost.2 <- analisis_events_stock(calendar_stock_tbl, resultado_xgboost.2)
-
-# -------CALENDAR USA-------
-resultado_xgboost.2 <- analisis_events_usa(calendar_usa_tbl_filt, resultado_xgboost.2)
-
-write_xlsx(resultado_xgboost.2, "./datos/Xgboost/resultado_xgboost.xlsx")
-
-
 # new data
 predicciones_nuevas <- bind_cols(
   wflw_final |> predict(data_new_to_predict),
   wflw_final |> predict(data_new_to_predict, type = "prob"),
   data_new_to_predict
 )
+
+predicciones_nuevas <- predicciones_nuevas |> clean_names()
+
+# -----------ANALYSIS with CALENDARS-------
+# add dates
+resultado_xgboost <- add_dates(resultado_xgboost, stock)
+resultado_xgboost.2 <- resultado_xgboost
+
+predicciones_nuevas <- add_dates(predicciones_nuevas, escenarios7)
+
+# -----CALENDAR EVENTS SOTCK ---
+resultado_xgboost.2 <- analisis_events_stock(calendar_stock_tbl, resultado_xgboost.2)
+
+predicciones_nuevas <- analisis_events_stock(calendar_stock_tbl, predicciones_nuevas)
+
+# -------CALENDAR USA-------
+resultado_xgboost.2 <- analisis_events_usa(calendar_usa_tbl_filt, resultado_xgboost.2)
+
+predicciones_nuevas <- analisis_events_usa(calendar_usa_tbl_filt, predicciones_nuevas)
+
+write_xlsx(resultado_xgboost.2, "./datos/Xgboost/resultado_xgboost.xlsx")
+write_xlsx(predicciones_nuevas, "./datos/Xgboost/pred_nuevas_xgboost.xlsx")
+
 
 

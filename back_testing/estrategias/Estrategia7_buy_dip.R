@@ -25,7 +25,7 @@ path_data <- "./datos/datos_SPLG_1year_05mar25.xlsx"
 path_vix <- "./datos/datos_VIX_1year_06mar25.xlsx"
 
 # yahoo finance data
-symbol_stock <- "BRK-B"
+symbol_stock <- "META"
 ultimo.dia <- "" #"2025-02-13"
 start <- "2025-03-06"
 end <- "2025-03-24"
