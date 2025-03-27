@@ -7,14 +7,10 @@ library(writexl)
 library(stringr)
 library(purrr)
 
-path_plt_complet <- "./datos/Xgboost/buyDips_META_10mar25v2.xlsx"
+path_plt_complet <- "./datos/Xgboost/buyDips_META_2years.xlsx"
 
 signals_db <- read_excel(path_plt_complet) |>
   clean_names()
-
-# the scenary as 8 should be buy in all moments
-# so resultado_xgboost[["signals]] shoud be all in TRUE
-signals_db$signals <- map(1:nrow(signals_db), ~ calibracion(.x, escenarios8, signals_db))
 
 calibracion <- function(index, escenarios, signals_db){
   i <- signals_db[["indices"]][index]
@@ -24,6 +20,10 @@ calibracion <- function(index, escenarios, signals_db){
     FALSE
   }
 }
+
+# the scenary as 8 should be buy in all moments
+# so resultado_xgboost[["signals]] shoud be all in TRUE
+signals_db$signals <- map(1:nrow(signals_db), ~ calibracion(.x, escenarios8, signals_db))
 
 signals_db <- signals_db |> mutate(signals = as.character(signals))
 

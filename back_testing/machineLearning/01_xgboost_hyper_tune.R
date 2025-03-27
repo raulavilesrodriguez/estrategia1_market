@@ -13,17 +13,22 @@ source(here::here("helpers/analisis_calendars.R"))
 
 slice <- dplyr::slice
 
-path_xgboost <- "./datos/Xgboost/buyDips_META_10mar25v2.xlsx"
+path_xgboost <- "./datos/Xgboost/buyDips_calibrado.xlsx"
 path_calendar_usa <- "./datos/calendars/calendar_usa.xlsx"
 path_calendar_stock <- "./datos/calendars/meta_11mar2025.xlsx"
-path_data <- "./datos/datos_META_1year_05mar25.xlsx"
+path_data <- "./datos/datos_META.xlsx"
 path_data_to_predict <- "./datos/Xgboost/buyDips_META_NUEVOS_21mar25.xlsx"
 
 
-stock <- Process_data_interactivebrokers(path_data)
+stock.train <- Process_data_interactivebrokers(path_data)
 
 data_new_to_predict <- read_excel(path_data_to_predict) |>
   clean_names()
+
+symbol_stock <- "META"
+start <- "2025-03-06"
+end <- "2025-03-24"
+stock.predict <- Get_stock_data_R_yahoo(symbol_stock, "5m", start = start, end = end)
 
 # -----Wrangling DATA of CALENDARS ----
 calendar_usa_tbl <- read_excel(path_calendar_usa) |>
@@ -66,7 +71,7 @@ signals_tbl |> glimpse()
 signals_tbl[is.na(signals_tbl)] <- 0
 
 signals_tbl <- signals_tbl |>
-  select(-indices) |>
+  select(-c(indices, name_stock)) |>
   mutate(signals = as.factor(signals))
 
 # ----MODEL AND PREPORCESSOR SPEC ----
@@ -208,10 +213,10 @@ predicciones_nuevas <- predicciones_nuevas |> clean_names()
 
 # -----------ANALYSIS with CALENDARS-------
 # add dates
-resultado_xgboost <- add_dates(resultado_xgboost, stock)
+resultado_xgboost <- add_dates(resultado_xgboost, stock.train)
 resultado_xgboost.2 <- resultado_xgboost
 
-predicciones_nuevas <- add_dates(predicciones_nuevas, escenarios7)
+predicciones_nuevas <- add_dates(predicciones_nuevas, stock.predict)
 
 # -----CALENDAR EVENTS SOTCK ---
 resultado_xgboost.2 <- analisis_events_stock(calendar_stock_tbl, resultado_xgboost.2)

@@ -20,12 +20,12 @@ source(here::here('algorithm/Calculo_profit7.R'))
 
 #-----Data-----
 # interactive brokers data
-download_interactiveBrokers <- FALSE
-path_data <- "./datos/datos_SPLG_1year_05mar25.xlsx"
-path_vix <- "./datos/datos_VIX_1year_06mar25.xlsx"
+download_interactiveBrokers <- TRUE
+path_data <- "./datos/datos_BRK B.xlsx"
+path_vix <- "./datos/datos_VIX.xlsx"
 
 # yahoo finance data
-symbol_stock <- "META"
+symbol_stock <- "BRK B"
 ultimo.dia <- "" #"2025-02-13"
 start <- "2025-03-06"
 end <- "2025-03-24"

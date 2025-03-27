@@ -22,8 +22,8 @@ source(here::here('algorithm/Calculo_profit7.R'))
 #-----Data-----
 # interactive brokers data
 download_interactiveBrokers <- FALSE
-path_data <- "./datos/datos_META_1year_05mar25.xlsx"
-path_vix <- "./datos/datos_VIX_1year_06mar25.xlsx"
+path_data <- "./datos/datos_META.xlsx"
+path_vix <- "./datos/datos_VIX.xlsx"
 path_xgboost <- "./datos/Xgboost/pred_nuevas_xgboost.xlsx"
 
 resultado_xgboost <- read_excel(path_xgboost) |>
@@ -68,6 +68,7 @@ currentPosition <- 0
 Estrategia8 <- function(stock){
   
   # filter signals
+  #pred_class == TRUE when i wanna predict, signals == TRUE when i wanna calibrate
   w <- resultado_xgboost |> filter(pred_class == TRUE)
   stock$signals <- seq_len(nrow(stock)) %in% w$indices
 
@@ -76,7 +77,8 @@ Estrategia8 <- function(stock){
   stock <- stock |> 
     mutate(
       profit = map_dbl(results, ~ pluck(.x, "profit", .default = 0)),
-      index_sell = map_dbl(results, ~ pluck(.x, "i", .default = NA)) 
+      index_sell = map_dbl(results, ~ pluck(.x, "i", .default = NA)),
+      num_stocks = map_dbl(results, ~ pluck(.x, "num_stokcs", .default = 0))
     )
   stock <- stock |>
     mutate(date_sell = case_when(!is.na(index_sell) ~ as_datetime(stock$date[index_sell])))
